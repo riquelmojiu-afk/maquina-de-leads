@@ -32,3 +32,29 @@
 ## Qualidade
 - [x] Testes vitest para routers principais (11 testes passando)
 - [x] Checkpoint final
+
+
+## Melhorias — Aumento de Cobertura de Leads
+
+### Fase 1: Checkpoint de Segurança
+- [ ] Checkpoint criado antes das mudanças (versão segura para rollback)
+
+### Fase 2: Maps Platform API Key
+- [ ] Suporte para Maps Platform API Key no painel de configurações
+- [ ] Testar mineração com Maps Platform API Key
+- [ ] Comparar resultados: Places API vs Maps Platform API
+
+### Fase 3: Múltiplas Queries + Nearby Search
+- [ ] Implementar estratégia de múltiplas queries (variações de busca)
+- [ ] Implementar Nearby Search em paralelo com Text Search
+- [ ] Consolidar resultados sem duplicatas
+- [ ] Testar com Aracaju para validar 200+ leads
+
+### Fase 4: Testes e Validação
+- [ ] Testes vitest para novas estratégias de mineração
+- [ ] Validar deduplicação entre Text Search e Nearby Search
+- [ ] Testar com múltiplas cidades
+
+### Fase 5: Entrega
+- [ ] Checkpoint final com melhorias
+- [ ] Documentação de como usar ambas as estratégias
