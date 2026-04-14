@@ -41,6 +41,7 @@ export default function Mining() {
   const { data: history, refetch: refetchHistory } = trpc.mining.history.useQuery();
 
   const [selectedCampaign, setSelectedCampaign] = useState<string>("");
+  const [useMapsApiKey, setUseMapsApiKey] = useState(false);
   const [activeLogId, setActiveLogId] = useState<number | null>(null);
   const [polling, setPolling] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -90,7 +91,7 @@ export default function Mining() {
       toast.error("Selecione uma campanha ativa.");
       return;
     }
-    startMutation.mutate({ campaignId: Number(selectedCampaign) });
+    startMutation.mutate({ campaignId: Number(selectedCampaign), useMapsApiKey });
   }
 
   return (
@@ -131,6 +132,21 @@ export default function Mining() {
             </Select>
           </div>
 
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Estratégia
+            </label>
+            <Select value={useMapsApiKey ? "maps" : "places"} onValueChange={(v) => setUseMapsApiKey(v === "maps")}>
+              <SelectTrigger className="w-56 bg-input border-border text-foreground">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                <SelectItem value="places">Places API (60 leads)</SelectItem>
+                <SelectItem value="maps">Maps Platform API (teste)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             onClick={handleStart}
             disabled={isRunning || startMutation.isPending || !selectedCampaign}
@@ -153,6 +169,12 @@ export default function Mining() {
         {activeCampaigns.length === 0 && (
           <p className="text-xs text-amber-400 mt-3">
             ⚠️ Nenhuma campanha ativa. Vá em Campanhas e ative uma para poder minerar.
+          </p>
+        )}
+
+        {useMapsApiKey && (
+          <p className="text-xs text-sky-400 mt-3">
+            🔍 Testando com Maps Platform API Key. Configure-a em Configurações para usar esta estratégia.
           </p>
         )}
       </div>

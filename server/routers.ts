@@ -176,9 +176,9 @@ export const appRouter = router({
   // ─── Mining ─────────────────────────────────────────────────────────────────
   mining: router({
     start: publicProcedure
-      .input(z.object({ campaignId: z.number() }))
+      .input(z.object({ campaignId: z.number(), useMapsApiKey: z.boolean().optional() }))
       .mutation(async ({ input }) => {
-        const logId = await startMining(input.campaignId);
+        const logId = await startMining(input.campaignId, input.useMapsApiKey);
         return { logId };
       }),
 
@@ -216,10 +216,14 @@ export const appRouter = router({
         google_places_api_key: all.google_places_api_key
           ? "••••••••" + (all.google_places_api_key.slice(-4) || "")
           : "",
+        google_maps_platform_api_key: all.google_maps_platform_api_key
+          ? "••••••••" + (all.google_maps_platform_api_key.slice(-4) || "")
+          : "",
         google_sheets_api_key: all.google_sheets_api_key
           ? "••••••••" + (all.google_sheets_api_key.slice(-4) || "")
           : "",
         google_places_api_key_set: !!all.google_places_api_key,
+        google_maps_platform_api_key_set: !!all.google_maps_platform_api_key,
         google_sheets_api_key_set: !!all.google_sheets_api_key,
       };
     }),
@@ -228,12 +232,16 @@ export const appRouter = router({
       .input(
         z.object({
           google_places_api_key: z.string().optional(),
+          google_maps_platform_api_key: z.string().optional(),
           google_sheets_api_key: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         if (input.google_places_api_key) {
           await setSetting("google_places_api_key", input.google_places_api_key);
+        }
+        if (input.google_maps_platform_api_key) {
+          await setSetting("google_maps_platform_api_key", input.google_maps_platform_api_key);
         }
         if (input.google_sheets_api_key) {
           await setSetting("google_sheets_api_key", input.google_sheets_api_key);

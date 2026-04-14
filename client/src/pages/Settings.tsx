@@ -19,14 +19,17 @@ export default function Settings() {
   });
 
   const [placesKey, setPlacesKey] = useState("");
+  const [mapsKey, setMapsKey] = useState("");
   const [sheetsKey, setSheetsKey] = useState("");
   const [showPlaces, setShowPlaces] = useState(false);
+  const [showMaps, setShowMaps] = useState(false);
   const [showSheets, setShowSheets] = useState(false);
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    const payload: { google_places_api_key?: string; google_sheets_api_key?: string } = {};
+    const payload: { google_places_api_key?: string; google_maps_platform_api_key?: string; google_sheets_api_key?: string } = {};
     if (placesKey.trim()) payload.google_places_api_key = placesKey.trim();
+    if (mapsKey.trim()) payload.google_maps_platform_api_key = mapsKey.trim();
     if (sheetsKey.trim()) payload.google_sheets_api_key = sheetsKey.trim();
 
     if (Object.keys(payload).length === 0) {
@@ -35,6 +38,7 @@ export default function Settings() {
     }
     setMutation.mutate(payload);
     setPlacesKey("");
+    setMapsKey("");
     setSheetsKey("");
   }
 
@@ -50,7 +54,7 @@ export default function Settings() {
 
       {/* Status Cards */}
       {!isLoading && settings && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
             <div
               className={`h-9 w-9 rounded-lg flex items-center justify-center ${
@@ -66,10 +70,34 @@ export default function Settings() {
               )}
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Google Places API</p>
+              <p className="text-sm font-medium text-foreground">Places API</p>
               <p className="text-xs text-muted-foreground">
                 {settings.google_places_api_key_set
                   ? `Configurada — ${settings.google_places_api_key}`
+                  : "Não configurada"}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+            <div
+              className={`h-9 w-9 rounded-lg flex items-center justify-center ${
+                settings.google_maps_platform_api_key_set
+                  ? "bg-emerald-400/10"
+                  : "bg-muted"
+              }`}
+            >
+              {settings.google_maps_platform_api_key_set ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              ) : (
+                <Key className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Maps Platform API</p>
+              <p className="text-xs text-muted-foreground">
+                {settings.google_maps_platform_api_key_set
+                  ? `Configurada — ${settings.google_maps_platform_api_key}`
                   : "Não configurada"}
               </p>
             </div>
@@ -90,7 +118,7 @@ export default function Settings() {
               )}
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Google Sheets API</p>
+              <p className="text-sm font-medium text-foreground">Sheets API</p>
               <p className="text-xs text-muted-foreground">
                 {settings.google_sheets_api_key_set
                   ? `Configurada — ${settings.google_sheets_api_key}`
@@ -148,6 +176,39 @@ export default function Settings() {
                 Google Cloud Console
               </a>{" "}
               — habilite a API "Places API" no seu projeto.
+            </p>
+          </div>
+
+          {/* Google Maps Platform API Key */}
+          <div className="space-y-2">
+            <Label className="text-foreground">
+              Google Maps Platform API Key
+              <span className="ml-2 text-xs text-muted-foreground font-normal">
+                (teste para mineração avançada — 200+ leads)
+              </span>
+            </Label>
+            <div className="relative">
+              <Input
+                type={showMaps ? "text" : "password"}
+                placeholder={
+                  settings?.google_maps_platform_api_key_set
+                    ? "Digite para substituir a chave atual..."
+                    : "AIzaSy..."
+                }
+                value={mapsKey}
+                onChange={(e) => setMapsKey(e.target.value)}
+                className="bg-input border-border text-foreground pr-10 font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowMaps((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showMaps ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Chave alternativa com múltiplas APIs habilitadas. Use esta para testar se consegue mais leads que a Places API padrão.
             </p>
           </div>
 

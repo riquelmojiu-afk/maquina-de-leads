@@ -49,12 +49,13 @@ export function getMiningProgress(logId: number): MiningProgress | undefined {
   return activeSessions.get(logId);
 }
 
-export async function startMining(campaignId: number): Promise<number> {
+export async function startMining(campaignId: number, useMapsApiKey: boolean = false): Promise<number> {
   const campaign = await getCampaignById(campaignId);
   if (!campaign) throw new Error("Campanha não encontrada");
 
-  const apiKey = await getSetting("google_places_api_key");
-  if (!apiKey) throw new Error("Chave da Google Places API não configurada. Acesse Configurações.");
+  const settingKey = useMapsApiKey ? "google_maps_platform_api_key" : "google_places_api_key";
+  const apiKey = await getSetting(settingKey);
+  if (!apiKey) throw new Error(`Chave da ${useMapsApiKey ? "Maps Platform" : "Google Places"} API não configurada. Acesse Configurações.`);
 
   const logId = await createMiningLog({
     campaignId,
