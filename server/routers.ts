@@ -1,28 +1,246 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  createCampaign,
+  deleteCampaign,
+  getAllSettings,
+  getCampaignById,
+  getCampaigns,
+  getDashboardMetrics,
+  getLeads,
+  getLeadsCount,
+  getMiningLogs,
+  getMiningLogById,
+  setSetting,
+  updateCampaign,
+} from "./db";
+import { getMiningProgress, startMining } from "./miningService";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
+
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // ─── Dashboard ──────────────────────────────────────────────────────────────
+  dashboard: router({
+    metrics: publicProcedure.query(async () => {
+      return getDashboardMetrics();
+    }),
+  }),
+
+  // ─── Campaigns ──────────────────────────────────────────────────────────────
+  campaigns: router({
+    list: publicProcedure.query(async () => {
+      return getCampaigns();
+    }),
+
+    getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+      const campaign = await getCampaignById(input.id);
+      if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campanha não encontrada" });
+      return campaign;
+    }),
+
+    create: publicProcedure
+      .input(
+        z.object({
+          name: z.string().min(1, "Nome obrigatório"),
+          nicho: z.string().min(1, "Nicho obrigatório"),
+          cidades: z.string().min(1, "Informe ao menos uma cidade"),
+          messageTemplate: z.string().optional(),
+          spreadsheetId: z.string().optional(),
+          status: z.enum(["ativa", "inativa"]).default("inativa"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await createCampaign(input);
+        return { id };
+      }),
+
+    update: publicProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          nicho: z.string().min(1).optional(),
+          cidades: z.string().optional(),
+          messageTemplate: z.string().optional(),
+          spreadsheetId: z.string().optional(),
+          status: z.enum(["ativa", "inativa"]).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateCampaign(id, data);
+        return { success: true };
+      }),
+
+    toggleStatus: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const campaign = await getCampaignById(input.id);
+        if (!campaign) throw new TRPCError({ code: "NOT_FOUND" });
+        const newStatus = campaign.status === "ativa" ? "inativa" : "ativa";
+        await updateCampaign(input.id, { status: newStatus });
+        return { status: newStatus };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteCampaign(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Leads ──────────────────────────────────────────────────────────────────
+  leads: router({
+    list: publicProcedure
+      .input(
+        z.object({
+          campaignId: z.number().optional(),
+          statusWhatsApp: z.enum(["pronto", "sem_telefone"]).optional(),
+          cidade: z.string().optional(),
+          limit: z.number().default(100),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        const [items, total] = await Promise.all([
+          getLeads(input),
+          getLeadsCount({
+            campaignId: input.campaignId,
+            statusWhatsApp: input.statusWhatsApp,
+            cidade: input.cidade,
+          }),
+        ]);
+        return { items, total };
+      }),
+
+    exportCsv: publicProcedure
+      .input(
+        z.object({
+          campaignId: z.number().optional(),
+          statusWhatsApp: z.enum(["pronto", "sem_telefone"]).optional(),
+          cidade: z.string().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const items = await getLeads({ ...input, limit: 10000, offset: 0 });
+
+        const headers = [
+          "ID",
+          "Campanha ID",
+          "Nome Empresa",
+          "Telefone Original",
+          "Telefone Normalizado",
+          "Cidade",
+          "Categoria",
+          "Endereço",
+          "Website",
+          "Status WhatsApp",
+          "Status Envio",
+          "Data Captura",
+        ];
+
+        const rows = items.map((l) => [
+          l.id,
+          l.campaignId,
+          `"${(l.nomeEmpresa || "").replace(/"/g, '""')}"`,
+          l.telefoneOriginal || "",
+          l.telefoneNormalizado || "",
+          `"${(l.cidade || "").replace(/"/g, '""')}"`,
+          `"${(l.categoria || "").replace(/"/g, '""')}"`,
+          `"${(l.endereco || "").replace(/"/g, '""')}"`,
+          `"${(l.website || "").replace(/"/g, '""')}"`,
+          l.statusWhatsApp,
+          l.statusEnvio,
+          l.dataCaptura ? new Date(l.dataCaptura).toISOString() : "",
+        ]);
+
+        const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+        return { csv, count: items.length };
+      }),
+  }),
+
+  // ─── Mining ─────────────────────────────────────────────────────────────────
+  mining: router({
+    start: publicProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .mutation(async ({ input }) => {
+        const logId = await startMining(input.campaignId);
+        return { logId };
+      }),
+
+    getProgress: publicProcedure
+      .input(z.object({ logId: z.number() }))
+      .query(async ({ input }) => {
+        const progress = getMiningProgress(input.logId);
+        if (progress) return progress;
+
+        // Fallback to DB
+        const log = await getMiningLogById(input.logId);
+        if (!log) throw new TRPCError({ code: "NOT_FOUND" });
+
+        return {
+          logId: log.id,
+          status: log.status,
+          leadsFound: log.leadsFound,
+          duplicatesSkipped: log.duplicatesSkipped,
+          errorsCount: log.errorsCount,
+          logs: JSON.parse(log.logMessages || "[]"),
+        };
+      }),
+
+    history: publicProcedure.query(async () => {
+      return getMiningLogs(20);
+    }),
+  }),
+
+  // ─── Settings ───────────────────────────────────────────────────────────────
+  settings: router({
+    getAll: publicProcedure.query(async () => {
+      const all = await getAllSettings();
+      // Mask API keys for display
+      return {
+        google_places_api_key: all.google_places_api_key
+          ? "••••••••" + (all.google_places_api_key.slice(-4) || "")
+          : "",
+        google_sheets_api_key: all.google_sheets_api_key
+          ? "••••••••" + (all.google_sheets_api_key.slice(-4) || "")
+          : "",
+        google_places_api_key_set: !!all.google_places_api_key,
+        google_sheets_api_key_set: !!all.google_sheets_api_key,
+      };
+    }),
+
+    set: publicProcedure
+      .input(
+        z.object({
+          google_places_api_key: z.string().optional(),
+          google_sheets_api_key: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        if (input.google_places_api_key) {
+          await setSetting("google_places_api_key", input.google_places_api_key);
+        }
+        if (input.google_sheets_api_key) {
+          await setSetting("google_sheets_api_key", input.google_sheets_api_key);
+        }
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

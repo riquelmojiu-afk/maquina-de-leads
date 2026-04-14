@@ -1,0 +1,269 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { trpc } from "@/lib/trpc";
+import { Building2, Download, Phone, Search } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+export default function Leads() {
+  const { data: campaigns } = trpc.campaigns.list.useQuery();
+
+  const [campaignId, setCampaignId] = useState<string>("all");
+  const [statusWhatsApp, setStatusWhatsApp] = useState<string>("all");
+  const [cidadeFilter, setCidadeFilter] = useState("");
+  const [cidadeInput, setCidadeInput] = useState("");
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 100;
+
+  const filters = {
+    campaignId: campaignId !== "all" ? Number(campaignId) : undefined,
+    statusWhatsApp:
+      statusWhatsApp !== "all"
+        ? (statusWhatsApp as "pronto" | "sem_telefone")
+        : undefined,
+    cidade: cidadeFilter || undefined,
+    limit: LIMIT,
+    offset,
+  };
+
+  const { data, isLoading } = trpc.leads.list.useQuery(filters);
+
+  const { data: csvData, refetch: fetchCsv } = trpc.leads.exportCsv.useQuery(
+    {
+      campaignId: filters.campaignId,
+      statusWhatsApp: filters.statusWhatsApp,
+      cidade: filters.cidade,
+    },
+    { enabled: false }
+  );
+
+  function handleExport() {
+    fetchCsv().then((result) => {
+      if (result.data?.csv) {
+        const blob = new Blob(["\uFEFF" + result.data.csv], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`${result.data.count} leads exportados!`);
+      }
+    });
+  }
+
+  const totalPages = data ? Math.ceil(data.total / LIMIT) : 0;
+  const currentPage = Math.floor(offset / LIMIT) + 1;
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {data ? `${data.total.toLocaleString("pt-BR")} leads encontrados` : "Carregando..."}
+          </p>
+        </div>
+        <Button onClick={handleExport} variant="outline" className="gap-2 border-border">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <Select value={campaignId} onValueChange={(v) => { setCampaignId(v); setOffset(0); }}>
+          <SelectTrigger className="w-48 bg-card border-border text-foreground">
+            <SelectValue placeholder="Campanha" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="all">Todas as campanhas</SelectItem>
+            {campaigns?.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={statusWhatsApp} onValueChange={(v) => { setStatusWhatsApp(v); setOffset(0); }}>
+          <SelectTrigger className="w-44 bg-card border-border text-foreground">
+            <SelectValue placeholder="Status WhatsApp" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="pronto">pronto</SelectItem>
+            <SelectItem value="sem_telefone">sem_telefone</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="flex gap-2">
+          <Input
+            placeholder="Filtrar por cidade..."
+            value={cidadeInput}
+            onChange={(e) => setCidadeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setCidadeFilter(cidadeInput);
+                setOffset(0);
+              }
+            }}
+            className="w-48 bg-card border-border text-foreground"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => { setCidadeFilter(cidadeInput); setOffset(0); }}
+            className="border-border"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {(campaignId !== "all" || statusWhatsApp !== "all" || cidadeFilter) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setCampaignId("all");
+              setStatusWhatsApp("all");
+              setCidadeFilter("");
+              setCidadeInput("");
+              setOffset(0);
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !data || data.items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Building2 className="h-10 w-10 text-muted-foreground/30 mb-4" />
+            <p className="text-sm font-medium text-foreground">Nenhum lead encontrado</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Execute uma mineração para capturar leads.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    {["Empresa", "Telefone", "Cidade", "Categoria", "Status WhatsApp", "Capturado em"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((lead) => (
+                    <tr
+                      key={lead.id}
+                      className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-foreground max-w-[200px] truncate">
+                          {lead.nomeEmpresa}
+                        </p>
+                        {lead.website && (
+                          <a
+                            href={lead.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-primary hover:underline truncate block max-w-[200px]"
+                          >
+                            {lead.website.replace(/^https?:\/\//, "")}
+                          </a>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {lead.telefoneNormalizado ? (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span className="text-foreground font-mono text-xs">
+                              {lead.telefoneNormalizado}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-foreground whitespace-nowrap">{lead.cidade || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate text-xs">
+                        {lead.categoria
+                          ? lead.categoria.split(",")[0]?.trim()
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`status-${lead.statusWhatsApp}`}>
+                          {lead.statusWhatsApp}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                        {new Date(lead.dataCaptura).toLocaleString("pt-BR")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  Página {currentPage} de {totalPages} · {data.total.toLocaleString("pt-BR")} leads
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset === 0}
+                    onClick={() => setOffset(Math.max(0, offset - LIMIT))}
+                    className="border-border text-xs"
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset + LIMIT >= data.total}
+                    onClick={() => setOffset(offset + LIMIT)}
+                    className="border-border text-xs"
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
