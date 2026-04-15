@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "9d66a831-5a75-4b01-985b-e68d0e1e3856",
-  "prevId": "0fe3d852-149b-4ed8-823e-d83171e1c9ed",
+  "id": "3417ed0c-5fe0-458c-9cab-95ea35c356a5",
+  "prevId": "1ea26d29-a856-4887-bb83-ff625dc2e1c3",
   "tables": {
     "campaigns": {
       "name": "campaigns",
@@ -53,6 +53,13 @@
         "spreadsheetId": {
           "name": "spreadsheetId",
           "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "searchVariations": {
+          "name": "searchVariations",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -176,6 +183,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'pending'"
+        },
+        "bloqueado": {
+          "name": "bloqueado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "dataCaptura": {
           "name": "dataCaptura",

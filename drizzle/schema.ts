@@ -6,6 +6,7 @@ import {
   timestamp,
   varchar,
   bigint,
+  boolean,
 } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
@@ -74,6 +75,7 @@ export const leads = mysqlTable("leads", {
   statusEnvio: mysqlEnum("statusEnvio", ["pending", "sent", "error"])
     .default("pending")
     .notNull(),
+  bloqueado: boolean("bloqueado").default(false).notNull(),
   dataCaptura: timestamp("dataCaptura").defaultNow().notNull(),
 });
 

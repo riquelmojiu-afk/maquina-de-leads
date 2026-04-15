@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `bloqueado` boolean DEFAULT false NOT NULL;

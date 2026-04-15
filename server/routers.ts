@@ -16,6 +16,7 @@ import {
   getMiningLogs,
   getMiningLogById,
   setSetting,
+  toggleLeadBloqueado,
   updateCampaign,
 } from "./db";
 import { getMiningProgress, startMining } from "./miningService";
@@ -114,6 +115,7 @@ export const appRouter = router({
           campaignId: z.number().optional(),
           statusWhatsApp: z.enum(["pronto", "sem_telefone"]).optional(),
           cidade: z.string().optional(),
+          bloqueado: z.boolean().optional(),
           limit: z.number().default(100),
           offset: z.number().default(0),
         })
@@ -125,9 +127,17 @@ export const appRouter = router({
             campaignId: input.campaignId,
             statusWhatsApp: input.statusWhatsApp,
             cidade: input.cidade,
+            bloqueado: input.bloqueado,
           }),
         ]);
         return { items, total };
+      }),
+
+    toggleBloqueado: publicProcedure
+      .input(z.object({ id: z.number(), bloqueado: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await toggleLeadBloqueado(input.id, input.bloqueado);
+        return { success: true };
       }),
 
     exportCsv: publicProcedure
@@ -220,8 +230,9 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const leads = await getLeads({ campaignId: input.campaignId, statusWhatsApp: "pronto" });
-        const validLeads = leads.filter((l) => l.telefoneNormalizado);
+        // Exclude blocked leads from dispatch
+        const allLeads = await getLeads({ campaignId: input.campaignId, statusWhatsApp: "pronto", bloqueado: false });
+        const validLeads = allLeads.filter((l) => l.telefoneNormalizado);
         const queued = await queueMultipleMessages(
           validLeads.map((l) => ({ id: l.id, telefoneNormalizado: l.telefoneNormalizado!, nomeEmpresa: l.nomeEmpresa })),
           input.message
@@ -291,6 +302,8 @@ export const appRouter = router({
         evolution_instance_name_set: !!all.evolution_instance_name,
         evolution_api_key_set: !!all.evolution_api_key,
         evolution_sender_number_set: !!all.evolution_sender_number,
+        dispatch_start_hour: all.dispatch_start_hour || "8",
+        dispatch_end_hour: all.dispatch_end_hour || "18",
       };
     }),
 
@@ -304,6 +317,8 @@ export const appRouter = router({
           evolution_instance_name: z.string().optional(),
           evolution_api_key: z.string().optional(),
           evolution_sender_number: z.string().optional(),
+          dispatch_start_hour: z.string().optional(),
+          dispatch_end_hour: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -327,6 +342,12 @@ export const appRouter = router({
         }
         if (input.evolution_sender_number) {
           await setSetting("evolution_sender_number", input.evolution_sender_number);
+        }
+        if (input.dispatch_start_hour !== undefined) {
+          await setSetting("dispatch_start_hour", input.dispatch_start_hour);
+        }
+        if (input.dispatch_end_hour !== undefined) {
+          await setSetting("dispatch_end_hour", input.dispatch_end_hour);
         }
         return { success: true };
       }),

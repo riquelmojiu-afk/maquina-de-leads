@@ -53,6 +53,8 @@ let EVOLUTION_API_BASE = "https://evo.wzapflow.com.br";
 let INSTANCE_NAME = "";    // Nome da instância (aparece na URL)
 let EVOLUTION_API_KEY = ""; // Global API Key (vai no header apikey)
 let SENDER_NUMBER = "";
+let DISPATCH_START_HOUR = 8;  // Hora de início dos disparos (0-23)
+let DISPATCH_END_HOUR = 18;   // Hora de fim dos disparos (0-23)
 
 // Load settings from database
 async function loadEvolutionSettings(): Promise<void> {
@@ -63,15 +65,20 @@ async function loadEvolutionSettings(): Promise<void> {
     const apiKey = await getSetting("evolution_api_key");
     const number = await getSetting("evolution_sender_number");
 
+    const startHour = await getSetting("dispatch_start_hour");
+    const endHour = await getSetting("dispatch_end_hour");
+
     if (baseUrl) EVOLUTION_API_BASE = baseUrl.trim().replace(/\/$/, "");
     if (instanceName) INSTANCE_NAME = instanceName.trim();
     if (apiKey) EVOLUTION_API_KEY = apiKey.trim();
     if (number) SENDER_NUMBER = number.trim();
+    if (startHour) DISPATCH_START_HOUR = parseInt(startHour, 10) || 8;
+    if (endHour) DISPATCH_END_HOUR = parseInt(endHour, 10) || 18;
 
     if (!INSTANCE_NAME || !EVOLUTION_API_KEY) {
       addLog("warning", "Configuração da Evolution API incompleta. Acesse Configurações e preencha Nome da Instância e API Key.");
     } else {
-      addLog("info", `Configurações carregadas. Instância: ${INSTANCE_NAME} | API Key: ${EVOLUTION_API_KEY.slice(0, 6)}...`);
+      addLog("info", `Configurações carregadas. Instância: ${INSTANCE_NAME} | Horário de disparo: ${DISPATCH_START_HOUR}h – ${DISPATCH_END_HOUR}h`);
     }
   } catch (e) {
     console.error("[WhatsApp] Failed to load settings:", e);
@@ -157,6 +164,22 @@ async function processQueue(): Promise<void> {
       const waitMinutes = Math.ceil(waitMs / 60000);
       addLog("info", `Aguardando intervalo de segurança... Próximo envio em ~${waitMinutes} min.`);
       await sleep(Math.min(waitMs, 60000)); // Check every minute max
+      continue;
+    }
+
+    // Check dispatch time window
+    const currentHour = new Date().getHours();
+    if (currentHour < DISPATCH_START_HOUR || currentHour >= DISPATCH_END_HOUR) {
+      const nextStart = new Date();
+      if (currentHour >= DISPATCH_END_HOUR) {
+        // After end hour: schedule for next day start
+        nextStart.setDate(nextStart.getDate() + 1);
+      }
+      nextStart.setHours(DISPATCH_START_HOUR, 0, 0, 0);
+      const waitMs = nextStart.getTime() - now.getTime();
+      const waitHours = Math.ceil(waitMs / 3600000);
+      addLog("warning", `Fora da janela de disparo (${DISPATCH_START_HOUR}h–${DISPATCH_END_HOUR}h). Aguardando até ${DISPATCH_START_HOUR}h (~${waitHours}h). Use Configurações para alterar o horário.`);
+      await sleep(Math.min(waitMs, 60 * 60 * 1000)); // Check every hour max
       continue;
     }
 

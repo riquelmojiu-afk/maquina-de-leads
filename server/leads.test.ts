@@ -43,10 +43,13 @@ vi.mock("./db", () => ({
       website: "https://example.com",
       statusWhatsApp: "pronto",
       statusEnvio: "pending",
+      bloqueado: false,
       dataCaptura: new Date(),
     },
   ]),
   getLeadsCount: vi.fn().mockResolvedValue(1),
+  toggleLeadBloqueado: vi.fn().mockResolvedValue(undefined),
+  getSetting: vi.fn().mockResolvedValue(null),
   getDashboardMetrics: vi.fn().mockResolvedValue({
     totalLeads: 60,
     leadsComTelefone: 45,
@@ -110,6 +113,25 @@ describe("leads router", () => {
     expect(result.items).toHaveLength(1);
     expect(result.total).toBe(1);
     expect(result.items[0].statusWhatsApp).toBe("pronto");
+  });
+
+  it("list accepts bloqueado filter", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const result = await caller.leads.list({ limit: 100, offset: 0, bloqueado: false });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].bloqueado).toBe(false);
+  });
+
+  it("toggleBloqueado blocks a lead", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const result = await caller.leads.toggleBloqueado({ id: 1, bloqueado: true });
+    expect(result.success).toBe(true);
+  });
+
+  it("toggleBloqueado unblocks a lead", async () => {
+    const caller = appRouter.createCaller(createCtx());
+    const result = await caller.leads.toggleBloqueado({ id: 1, bloqueado: false });
+    expect(result.success).toBe(true);
   });
 
   it("exportCsv returns valid CSV", async () => {

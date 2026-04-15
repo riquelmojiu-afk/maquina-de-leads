@@ -8,6 +8,13 @@
       "when": 1776282212574,
       "tag": "0000_worthless_madame_web",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1776285023343,
+      "tag": "0001_daily_shotgun",
+      "breakpoints": true
     }
   ]
 }

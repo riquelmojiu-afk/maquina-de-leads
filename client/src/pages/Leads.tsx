@@ -16,9 +16,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Building2, CheckCircle2, Clock, Download, MessageCircle, Phone, Search, XCircle } from "lucide-react";
+import {
+  Ban,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Download,
+  MessageCircle,
+  Phone,
+  Search,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -49,11 +65,13 @@ function StatusEnvioBadge({ status }: { status: string }) {
 
 export default function Leads() {
   const { data: campaigns } = trpc.campaigns.list.useQuery();
+  const utils = trpc.useUtils();
 
   const [campaignId, setCampaignId] = useState<string>("all");
   const [statusWhatsApp, setStatusWhatsApp] = useState<string>("all");
   const [cidadeFilter, setCidadeFilter] = useState("");
   const [cidadeInput, setCidadeInput] = useState("");
+  const [bloqueadoFilter, setBloqueadoFilter] = useState<string>("all");
   const [offset, setOffset] = useState(0);
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
@@ -66,6 +84,12 @@ export default function Leads() {
         ? (statusWhatsApp as "pronto" | "sem_telefone")
         : undefined,
     cidade: cidadeFilter || undefined,
+    bloqueado:
+      bloqueadoFilter === "bloqueado"
+        ? true
+        : bloqueadoFilter === "ativo"
+        ? false
+        : undefined,
     limit: LIMIT,
     offset,
   };
@@ -80,6 +104,14 @@ export default function Leads() {
     },
     { enabled: false }
   );
+
+  const toggleBloqueadoMutation = trpc.leads.toggleBloqueado.useMutation({
+    onSuccess: (_, variables) => {
+      toast.success(variables.bloqueado ? "Lead bloqueado com sucesso." : "Lead desbloqueado com sucesso.");
+      utils.leads.list.invalidate();
+    },
+    onError: (e) => toast.error("Erro ao alterar status: " + e.message),
+  });
 
   const sendWhatsAppMutation = trpc.whatsapp.sendToCampaign.useMutation({
     onSuccess: (result) => {
@@ -177,8 +209,19 @@ export default function Leads() {
           </SelectTrigger>
           <SelectContent className="bg-card border-border">
             <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="pronto">pronto</SelectItem>
-            <SelectItem value="sem_telefone">sem_telefone</SelectItem>
+            <SelectItem value="pronto">Com telefone</SelectItem>
+            <SelectItem value="sem_telefone">Sem telefone</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={bloqueadoFilter} onValueChange={(v) => { setBloqueadoFilter(v); setOffset(0); }}>
+          <SelectTrigger className="w-44 bg-card border-border text-foreground">
+            <SelectValue placeholder="Bloqueados" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="all">Todos os leads</SelectItem>
+            <SelectItem value="ativo">Apenas ativos</SelectItem>
+            <SelectItem value="bloqueado">Apenas bloqueados</SelectItem>
           </SelectContent>
         </Select>
 
@@ -205,7 +248,7 @@ export default function Leads() {
           </Button>
         </div>
 
-        {(campaignId !== "all" || statusWhatsApp !== "all" || cidadeFilter) && (
+        {(campaignId !== "all" || statusWhatsApp !== "all" || cidadeFilter || bloqueadoFilter !== "all") && (
           <Button
             variant="ghost"
             size="sm"
@@ -214,6 +257,7 @@ export default function Leads() {
               setStatusWhatsApp("all");
               setCidadeFilter("");
               setCidadeInput("");
+              setBloqueadoFilter("all");
               setOffset(0);
             }}
             className="text-muted-foreground hover:text-foreground"
@@ -243,7 +287,7 @@ export default function Leads() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Empresa", "Telefone", "Cidade", "Categoria", "Status WhatsApp", "Status Envio", "Capturado em"].map(
+                    {["Empresa", "Telefone", "Cidade", "Categoria", "Status WhatsApp", "Status Envio", "Capturado em", "Ações"].map(
                       (h) => (
                         <th
                           key={h}
@@ -259,22 +303,33 @@ export default function Leads() {
                   {data.items.map((lead) => (
                     <tr
                       key={lead.id}
-                      className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                      className={`border-b border-border/50 transition-colors ${
+                        lead.bloqueado
+                          ? "bg-rose-950/10 hover:bg-rose-950/20 opacity-70"
+                          : "hover:bg-muted/30"
+                      }`}
                     >
                       <td className="px-4 py-3">
-                        <p className="font-medium text-foreground max-w-[200px] truncate">
-                          {lead.nomeEmpresa}
-                        </p>
-                        {lead.website && (
-                          <a
-                            href={lead.website}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-primary hover:underline truncate block max-w-[200px]"
-                          >
-                            {lead.website.replace(/^https?:\/\//, "")}
-                          </a>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {lead.bloqueado && (
+                            <Ban className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                          )}
+                          <div>
+                            <p className="font-medium text-foreground max-w-[180px] truncate">
+                              {lead.nomeEmpresa}
+                            </p>
+                            {lead.website && (
+                              <a
+                                href={lead.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-primary hover:underline truncate block max-w-[180px]"
+                              >
+                                {lead.website.replace(/^https?:\/\//, "")}
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         {lead.telefoneNormalizado ? (
@@ -290,20 +345,56 @@ export default function Leads() {
                       </td>
                       <td className="px-4 py-3 text-foreground whitespace-nowrap">{lead.cidade || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate text-xs">
-                        {lead.categoria
-                          ? lead.categoria.split(",")[0]?.trim()
-                          : "—"}
+                        {lead.categoria ? lead.categoria.split(",")[0]?.trim() : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`status-${lead.statusWhatsApp}`}>
-                          {lead.statusWhatsApp}
-                        </span>
+                        <Badge
+                          variant="outline"
+                          className={
+                            lead.statusWhatsApp === "pronto"
+                              ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20"
+                              : "text-slate-500 border-slate-200 bg-slate-50 dark:bg-slate-950/20"
+                          }
+                        >
+                          {lead.statusWhatsApp === "pronto" ? "Com telefone" : "Sem telefone"}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3">
                         <StatusEnvioBadge status={lead.statusEnvio} />
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                         {new Date(lead.dataCaptura).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-7 w-7 ${
+                                lead.bloqueado
+                                  ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                  : "text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                              }`}
+                              disabled={toggleBloqueadoMutation.isPending}
+                              onClick={() =>
+                                toggleBloqueadoMutation.mutate({
+                                  id: lead.id,
+                                  bloqueado: !lead.bloqueado,
+                                })
+                              }
+                            >
+                              {lead.bloqueado ? (
+                                <ShieldCheck className="h-4 w-4" />
+                              ) : (
+                                <Ban className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {lead.bloqueado ? "Desbloquear lead (reativar disparo)" : "Bloquear lead (não receberá disparos)"}
+                          </TooltipContent>
+                        </Tooltip>
                       </td>
                     </tr>
                   ))}
@@ -352,8 +443,8 @@ export default function Leads() {
               Enviar Mensagem WhatsApp
             </DialogTitle>
             <DialogDescription>
-              Escreva a mensagem que será enviada para todos os leads com telefone da campanha selecionada.
-              Os disparos serão feitos com intervalos aleatórios de 10 a 30 minutos para proteção do número.
+              Escreva a mensagem que será enviada para todos os leads <strong>ativos</strong> (não bloqueados) com telefone da campanha selecionada.
+              Os disparos respeitam o horário configurado em Configurações e usam intervalos aleatórios de 10 a 30 minutos entre cada envio.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">

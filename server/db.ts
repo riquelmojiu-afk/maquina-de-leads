@@ -111,6 +111,7 @@ export async function getLeads(filters?: {
   campaignId?: number;
   statusWhatsApp?: "pronto" | "sem_telefone";
   cidade?: string;
+  bloqueado?: boolean;
   limit?: number;
   offset?: number;
 }): Promise<Lead[]> {
@@ -121,6 +122,7 @@ export async function getLeads(filters?: {
   if (filters?.campaignId) conditions.push(eq(leads.campaignId, filters.campaignId));
   if (filters?.statusWhatsApp) conditions.push(eq(leads.statusWhatsApp, filters.statusWhatsApp));
   if (filters?.cidade) conditions.push(like(leads.cidade, `%${filters.cidade}%`));
+  if (filters?.bloqueado !== undefined) conditions.push(eq(leads.bloqueado, filters.bloqueado));
 
   const query = db
     .select()
@@ -133,10 +135,17 @@ export async function getLeads(filters?: {
   return query;
 }
 
+export async function toggleLeadBloqueado(id: number, bloqueado: boolean): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(leads).set({ bloqueado }).where(eq(leads.id, id));
+}
+
 export async function getLeadsCount(filters?: {
   campaignId?: number;
   statusWhatsApp?: "pronto" | "sem_telefone";
   cidade?: string;
+  bloqueado?: boolean;
 }): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
@@ -145,6 +154,7 @@ export async function getLeadsCount(filters?: {
   if (filters?.campaignId) conditions.push(eq(leads.campaignId, filters.campaignId));
   if (filters?.statusWhatsApp) conditions.push(eq(leads.statusWhatsApp, filters.statusWhatsApp));
   if (filters?.cidade) conditions.push(like(leads.cidade, `%${filters.cidade}%`));
+  if (filters?.bloqueado !== undefined) conditions.push(eq(leads.bloqueado, filters.bloqueado));
 
   const result = await db
     .select({ count: sql<number>`count(*)` })

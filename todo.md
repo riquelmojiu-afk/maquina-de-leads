@@ -36,3 +36,14 @@
 - [x] Atualizar Settings.tsx com campo separado para Nome da Instância e API Key Global
 - [x] Atualizar routers.ts para aceitar e salvar o novo campo evolution_instance_name
 - [x] Salvar checkpoint e push para o GitHub
+
+## Novas Funcionalidades
+- [x] Adicionar coluna `bloqueado` (boolean) na tabela leads via migração SQL
+- [x] Adicionar endpoint trpc.leads.toggleBloqueado no routers.ts
+- [x] Atualizar página Leads.tsx com botão de bloquear/desbloquear e filtro de bloqueados
+- [x] Garantir que leads bloqueados sejam ignorados no disparo (whatsappService + routers)
+- [x] Adicionar campos dispatch_start_hour e dispatch_end_hour na tabela settings
+- [x] Adicionar campos de horário de disparo na página Configurações
+- [x] Implementar lógica de horário no whatsappService (aguardar janela de disparo)
+- [x] Atualizar testes vitest para cobrir as novas funcionalidades
+- [x] Salvar checkpoint e push para o GitHub

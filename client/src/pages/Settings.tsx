@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Eye, EyeOff, Key, MessageCircle, Settings as SettingsIcon, Shield } from "lucide-react";
+import { CheckCircle2, Clock, Eye, EyeOff, Key, MessageCircle, Settings as SettingsIcon, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -29,6 +29,8 @@ export default function Settings() {
   const [showMaps, setShowMaps] = useState(false);
   const [showSheets, setShowSheets] = useState(false);
   const [showEvolutionApiKey, setShowEvolutionApiKey] = useState(false);
+  const [dispatchStartHour, setDispatchStartHour] = useState("");
+  const [dispatchEndHour, setDispatchEndHour] = useState("");
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +42,8 @@ export default function Settings() {
     if (evolutionInstanceName.trim()) payload.evolution_instance_name = evolutionInstanceName.trim();
     if (evolutionApiKey.trim()) payload.evolution_api_key = evolutionApiKey.trim();
     if (evolutionNumber.trim()) payload.evolution_sender_number = evolutionNumber.trim();
+    if (dispatchStartHour.trim()) payload.dispatch_start_hour = dispatchStartHour.trim();
+    if (dispatchEndHour.trim()) payload.dispatch_end_hour = dispatchEndHour.trim();
 
     if (Object.keys(payload).length === 0) {
       toast.error("Preencha ao menos um campo para salvar.");
@@ -53,6 +57,8 @@ export default function Settings() {
     setEvolutionInstanceName("");
     setEvolutionApiKey("");
     setEvolutionNumber("");
+    setDispatchStartHour("");
+    setDispatchEndHour("");
   }
 
   return (
@@ -280,6 +286,45 @@ export default function Settings() {
                   <span className="text-emerald-500 ml-1">Configurada: {settings.evolution_api_key}</span>
                 )}
               </p>
+            </div>
+
+            {/* Horário de Disparo */}
+            <div className="mt-6 border-t border-border pt-5">
+              <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Janela de Horário para Disparos
+              </h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Os disparos só serão realizados dentro do horário configurado. Fora desse intervalo, as mensagens ficam na fila e aguardam automaticamente.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground">Hora de Início</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    placeholder={settings?.dispatch_start_hour ?? "8"}
+                    value={dispatchStartHour}
+                    onChange={(e) => setDispatchStartHour(e.target.value)}
+                    className="bg-input border-border text-foreground font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Hora de início (0–23). Atual: <strong>{settings?.dispatch_start_hour ?? "8"}h</strong></p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground">Hora de Fim</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    placeholder={settings?.dispatch_end_hour ?? "18"}
+                    value={dispatchEndHour}
+                    onChange={(e) => setDispatchEndHour(e.target.value)}
+                    className="bg-input border-border text-foreground font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Hora de fim (0–23). Atual: <strong>{settings?.dispatch_end_hour ?? "18"}h</strong></p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2 mt-4">
