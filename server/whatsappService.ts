@@ -46,8 +46,12 @@ export function clearBroadcastLogs() {
 }
 
 // Configuration - loaded from database settings
+// Evolution API structure:
+//   POST {EVOLUTION_API_BASE}/message/sendText/{INSTANCE_NAME}
+//   Header: apikey: {EVOLUTION_API_KEY}
 let EVOLUTION_API_BASE = "https://evo.wzapflow.com.br";
-let INSTANCE_TOKEN = "";
+let INSTANCE_NAME = "";    // Nome da instância (aparece na URL)
+let EVOLUTION_API_KEY = ""; // Global API Key (vai no header apikey)
 let SENDER_NUMBER = "";
 
 // Load settings from database
@@ -55,17 +59,19 @@ async function loadEvolutionSettings(): Promise<void> {
   try {
     const { getSetting } = await import("./db");
     const baseUrl = await getSetting("evolution_api_base");
-    const token = await getSetting("evolution_instance_token");
+    const instanceName = await getSetting("evolution_instance_name");
+    const apiKey = await getSetting("evolution_api_key");
     const number = await getSetting("evolution_sender_number");
-    
-    if (baseUrl) EVOLUTION_API_BASE = baseUrl;
-    if (token) INSTANCE_TOKEN = token;
-    if (number) SENDER_NUMBER = number;
-    
-    if (!INSTANCE_TOKEN) {
-      addLog("warning", "Configuração da Evolution API pendente (Token não encontrado).");
+
+    if (baseUrl) EVOLUTION_API_BASE = baseUrl.trim().replace(/\/$/, "");
+    if (instanceName) INSTANCE_NAME = instanceName.trim();
+    if (apiKey) EVOLUTION_API_KEY = apiKey.trim();
+    if (number) SENDER_NUMBER = number.trim();
+
+    if (!INSTANCE_NAME || !EVOLUTION_API_KEY) {
+      addLog("warning", "Configuração da Evolution API incompleta. Acesse Configurações e preencha Nome da Instância e API Key.");
     } else {
-      addLog("info", `Configurações carregadas. Instância: ${INSTANCE_TOKEN.slice(0, 5)}...`);
+      addLog("info", `Configurações carregadas. Instância: ${INSTANCE_NAME} | API Key: ${EVOLUTION_API_KEY.slice(0, 6)}...`);
     }
   } catch (e) {
     console.error("[WhatsApp] Failed to load settings:", e);
@@ -140,7 +146,7 @@ function startProcessing(): void {
 
 async function processQueue(): Promise<void> {
   addLog("info", "Processamento da fila iniciado.");
-  
+
   while (messageQueue.length > 0) {
     const now = new Date();
     const item = messageQueue[0];
@@ -164,7 +170,7 @@ async function processQueue(): Promise<void> {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       item.retries++;
-      
+
       if (item.retries < MAX_RETRIES) {
         const nextInterval = getRandomInterval();
         item.nextRetryAt = new Date(Date.now() + nextInterval);
@@ -197,8 +203,12 @@ async function sendWhatsAppMessage(item: WhatsAppQueueItem): Promise<void> {
   // Ensure settings are fresh
   await loadEvolutionSettings();
 
-  if (!INSTANCE_TOKEN) {
-    throw new Error("Evolution Instance Token não configurado. Acesse Configurações e preencha o token da Evolution API.");
+  if (!INSTANCE_NAME) {
+    throw new Error("Nome da Instância não configurado. Acesse Configurações → Evolution API e preencha o campo 'Nome da Instância'.");
+  }
+
+  if (!EVOLUTION_API_KEY) {
+    throw new Error("API Key da Evolution não configurada. Acesse Configurações → Evolution API e preencha o campo 'API Key Global'.");
   }
 
   if (!EVOLUTION_API_BASE) {
@@ -216,25 +226,43 @@ async function sendWhatsAppMessage(item: WhatsAppQueueItem): Promise<void> {
     text: item.message,
   };
 
-  const response = await fetch(`${EVOLUTION_API_BASE}/message/sendText/${INSTANCE_TOKEN}`, {
+  // Correct Evolution API v2 endpoint:
+  // POST {base}/message/sendText/{instanceName}
+  // Header: apikey: {globalApiKey}
+  const url = `${EVOLUTION_API_BASE}/message/sendText/${INSTANCE_NAME}`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "apikey": INSTANCE_TOKEN,
+      "apikey": EVOLUTION_API_KEY,
     },
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    let errorData;
+    let errorData: any;
     try {
       errorData = JSON.parse(errorText);
     } catch {
       errorData = { message: errorText };
     }
+
+    // Provide a helpful message for common errors
+    if (response.status === 404) {
+      throw new Error(
+        `Instância "${INSTANCE_NAME}" não encontrada na Evolution API. Verifique se o nome da instância está correto nas Configurações.`
+      );
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `API Key inválida ou sem permissão. Verifique a API Key Global nas Configurações.`
+      );
+    }
+
     throw new Error(
-      `Evolution API error: ${response.status} - ${errorData.message || JSON.stringify(errorData)}`
+      `Evolution API error: ${response.status} - ${errorData?.message || errorData?.response?.message || JSON.stringify(errorData)}`
     );
   }
 

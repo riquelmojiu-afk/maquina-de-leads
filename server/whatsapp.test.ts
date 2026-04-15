@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -49,5 +49,33 @@ describe("whatsapp router", () => {
     expect(result).toEqual({ success: true });
     const status = await caller.whatsapp.getQueueStatus();
     expect(status.total).toBe(0);
+  });
+});
+
+describe("settings router — evolution api fields", () => {
+  it("settings.getAll returns evolution_instance_name and evolution_api_key fields", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const settings = await caller.settings.getAll();
+    // New fields must exist (replacing old evolution_instance_token)
+    expect(settings).toHaveProperty("evolution_instance_name");
+    expect(settings).toHaveProperty("evolution_api_key");
+    expect(settings).toHaveProperty("evolution_instance_name_set");
+    expect(settings).toHaveProperty("evolution_api_key_set");
+    // Old field must NOT exist
+    expect(settings).not.toHaveProperty("evolution_instance_token");
+    expect(settings).not.toHaveProperty("evolution_instance_token_set");
+  });
+
+  it("settings.set accepts evolution_instance_name and evolution_api_key", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    // Should not throw — just validates the schema accepts the new fields
+    await expect(
+      caller.settings.set({
+        evolution_instance_name: "test-instance",
+        evolution_api_key: "test-api-key-12345",
+      })
+    ).resolves.toEqual({ success: true });
   });
 });

@@ -22,12 +22,13 @@ export default function Settings() {
   const [mapsKey, setMapsKey] = useState("");
   const [sheetsKey, setSheetsKey] = useState("");
   const [evolutionBase, setEvolutionBase] = useState("");
-  const [evolutionToken, setEvolutionToken] = useState("");
+  const [evolutionInstanceName, setEvolutionInstanceName] = useState("");
+  const [evolutionApiKey, setEvolutionApiKey] = useState("");
   const [evolutionNumber, setEvolutionNumber] = useState("");
   const [showPlaces, setShowPlaces] = useState(false);
   const [showMaps, setShowMaps] = useState(false);
   const [showSheets, setShowSheets] = useState(false);
-  const [showEvolutionToken, setShowEvolutionToken] = useState(false);
+  const [showEvolutionApiKey, setShowEvolutionApiKey] = useState(false);
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +37,8 @@ export default function Settings() {
     if (mapsKey.trim()) payload.google_maps_platform_api_key = mapsKey.trim();
     if (sheetsKey.trim()) payload.google_sheets_api_key = sheetsKey.trim();
     if (evolutionBase.trim()) payload.evolution_api_base = evolutionBase.trim();
-    if (evolutionToken.trim()) payload.evolution_instance_token = evolutionToken.trim();
+    if (evolutionInstanceName.trim()) payload.evolution_instance_name = evolutionInstanceName.trim();
+    if (evolutionApiKey.trim()) payload.evolution_api_key = evolutionApiKey.trim();
     if (evolutionNumber.trim()) payload.evolution_sender_number = evolutionNumber.trim();
 
     if (Object.keys(payload).length === 0) {
@@ -48,7 +50,8 @@ export default function Settings() {
     setMapsKey("");
     setSheetsKey("");
     setEvolutionBase("");
-    setEvolutionToken("");
+    setEvolutionInstanceName("");
+    setEvolutionApiKey("");
     setEvolutionNumber("");
   }
 
@@ -68,9 +71,7 @@ export default function Settings() {
           <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
             <div
               className={`h-9 w-9 rounded-lg flex items-center justify-center ${
-                settings.google_places_api_key_set
-                  ? "bg-emerald-400/10"
-                  : "bg-muted"
+                settings.google_places_api_key_set ? "bg-emerald-400/10" : "bg-muted"
               }`}
             >
               {settings.google_places_api_key_set ? (
@@ -92,12 +93,12 @@ export default function Settings() {
           <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
             <div
               className={`h-9 w-9 rounded-lg flex items-center justify-center ${
-                settings.evolution_instance_token_set
+                settings.evolution_instance_name_set && settings.evolution_api_key_set
                   ? "bg-emerald-400/10"
                   : "bg-muted"
               }`}
             >
-              {settings.evolution_instance_token_set ? (
+              {settings.evolution_instance_name_set && settings.evolution_api_key_set ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               ) : (
                 <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -106,8 +107,8 @@ export default function Settings() {
             <div>
               <p className="text-sm font-medium text-foreground">Evolution API</p>
               <p className="text-xs text-muted-foreground">
-                {settings.evolution_instance_token_set
-                  ? `Configurada — ${settings.evolution_instance_token}`
+                {settings.evolution_instance_name_set && settings.evolution_api_key_set
+                  ? `Instância: ${settings.evolution_instance_name}`
                   : "Não configurada"}
               </p>
             </div>
@@ -116,9 +117,7 @@ export default function Settings() {
           <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
             <div
               className={`h-9 w-9 rounded-lg flex items-center justify-center ${
-                settings.google_sheets_api_key_set
-                  ? "bg-emerald-400/10"
-                  : "bg-muted"
+                settings.google_sheets_api_key_set ? "bg-emerald-400/10" : "bg-muted"
               }`}
             >
               {settings.google_sheets_api_key_set ? (
@@ -209,45 +208,77 @@ export default function Settings() {
 
           {/* Evolution API Settings */}
           <div className="border-t border-border pt-6 mt-6">
-            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               Integração WhatsApp (Evolution API)
             </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              A Evolution API usa dois campos distintos: o <strong>Nome da Instância</strong> vai na URL da requisição,
+              e a <strong>API Key Global</strong> vai no cabeçalho de autenticação.
+            </p>
 
             <div className="space-y-2">
               <Label className="text-foreground">URL Base da Evolution API</Label>
               <Input
                 type="text"
-                placeholder="https://evo.wzapflow.com.br"
+                placeholder={settings?.evolution_api_base || "https://evo.wzapflow.com.br"}
                 value={evolutionBase}
                 onChange={(e) => setEvolutionBase(e.target.value)}
                 className="bg-input border-border text-foreground font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                URL base da sua instância Evolution API
+                URL base do seu servidor Evolution API (sem barra no final)
               </p>
             </div>
 
             <div className="space-y-2 mt-4">
-              <Label className="text-foreground">Token da Instância</Label>
+              <Label className="text-foreground">
+                Nome da Instância
+                <span className="ml-2 text-xs font-normal text-amber-500">(usado na URL)</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder={settings?.evolution_instance_name || "minha-instancia"}
+                value={evolutionInstanceName}
+                onChange={(e) => setEvolutionInstanceName(e.target.value)}
+                className="bg-input border-border text-foreground font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Nome exato da instância criada no painel da Evolution API (ex: <code className="bg-muted px-1 rounded">minha-instancia</code>).
+                Não confundir com o token UUID.
+              </p>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <Label className="text-foreground">
+                API Key Global
+                <span className="ml-2 text-xs font-normal text-amber-500">(cabeçalho de autenticação)</span>
+              </Label>
               <div className="relative">
                 <Input
-                  type={showEvolutionToken ? "text" : "password"}
-                  placeholder="7504E1D39F79-4BF2-AA96-1DD9E9ADA726"
-                  value={evolutionToken}
-                  onChange={(e) => setEvolutionToken(e.target.value)}
+                  type={showEvolutionApiKey ? "text" : "password"}
+                  placeholder={
+                    settings?.evolution_api_key_set
+                      ? "Digite para substituir a chave atual..."
+                      : "sua-api-key-global"
+                  }
+                  value={evolutionApiKey}
+                  onChange={(e) => setEvolutionApiKey(e.target.value)}
                   className="bg-input border-border text-foreground pr-10 font-mono text-sm"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowEvolutionToken((v) => !v)}
+                  onClick={() => setShowEvolutionApiKey((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showEvolutionToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showEvolutionApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Token de autenticação da sua instância
+                Global API Key do servidor Evolution (encontrada em <code className="bg-muted px-1 rounded">Configurações → API Key</code> no painel).
+                {settings?.evolution_api_key_set && (
+                  <span className="text-emerald-500 ml-1">Configurada: {settings.evolution_api_key}</span>
+                )}
               </p>
             </div>
 
@@ -255,13 +286,13 @@ export default function Settings() {
               <Label className="text-foreground">Número do WhatsApp</Label>
               <Input
                 type="text"
-                placeholder="557999511102@s.whatsapp.net"
+                placeholder={settings?.evolution_sender_number || "557999511102"}
                 value={evolutionNumber}
                 onChange={(e) => setEvolutionNumber(e.target.value)}
                 className="bg-input border-border text-foreground font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Número de WhatsApp que enviará as mensagens (formato: 55XXXXXXXXXXX@s.whatsapp.net)
+                Número de WhatsApp que enviará as mensagens (somente dígitos com DDD e DDI, ex: <code className="bg-muted px-1 rounded">5511999999999</code>)
               </p>
             </div>
           </div>

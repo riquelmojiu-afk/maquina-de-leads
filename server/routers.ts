@@ -284,10 +284,12 @@ export const appRouter = router({
         google_maps_platform_api_key_set: !!all.google_maps_platform_api_key,
         google_sheets_api_key_set: !!all.google_sheets_api_key,
         evolution_api_base: all.evolution_api_base || "",
-        evolution_instance_token: all.evolution_instance_token ? "••••••••" + (all.evolution_instance_token.slice(-4) || "") : "",
+        evolution_instance_name: all.evolution_instance_name || "",
+        evolution_api_key: all.evolution_api_key ? "••••••••" + (all.evolution_api_key.slice(-4) || "") : "",
         evolution_sender_number: all.evolution_sender_number || "",
         evolution_api_base_set: !!all.evolution_api_base,
-        evolution_instance_token_set: !!all.evolution_instance_token,
+        evolution_instance_name_set: !!all.evolution_instance_name,
+        evolution_api_key_set: !!all.evolution_api_key,
         evolution_sender_number_set: !!all.evolution_sender_number,
       };
     }),
@@ -299,7 +301,8 @@ export const appRouter = router({
           google_maps_platform_api_key: z.string().optional(),
           google_sheets_api_key: z.string().optional(),
           evolution_api_base: z.string().optional(),
-          evolution_instance_token: z.string().optional(),
+          evolution_instance_name: z.string().optional(),
+          evolution_api_key: z.string().optional(),
           evolution_sender_number: z.string().optional(),
         })
       )
@@ -316,8 +319,11 @@ export const appRouter = router({
         if (input.evolution_api_base) {
           await setSetting("evolution_api_base", input.evolution_api_base);
         }
-        if (input.evolution_instance_token) {
-          await setSetting("evolution_instance_token", input.evolution_instance_token);
+        if (input.evolution_instance_name) {
+          await setSetting("evolution_instance_name", input.evolution_instance_name);
+        }
+        if (input.evolution_api_key) {
+          await setSetting("evolution_api_key", input.evolution_api_key);
         }
         if (input.evolution_sender_number) {
           await setSetting("evolution_sender_number", input.evolution_sender_number);

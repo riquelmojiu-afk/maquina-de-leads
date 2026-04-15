@@ -27,5 +27,12 @@
 
 ## Qualidade
 - [x] Testes vitest passando (5 testes: auth.logout + whatsapp endpoints)
-- [ ] Salvar checkpoint final
-- [ ] Push para o GitHub
+- [x] Salvar checkpoint final
+- [x] Push para o GitHub
+
+## Correção Evolution API — Separação de campos
+- [x] Separar campo "Nome da Instância" do campo "API Key Global" no whatsappService.ts
+- [x] Adicionar campo evolution_instance_name no banco de dados (settings)
+- [x] Atualizar Settings.tsx com campo separado para Nome da Instância e API Key Global
+- [x] Atualizar routers.ts para aceitar e salvar o novo campo evolution_instance_name
+- [x] Salvar checkpoint e push para o GitHub
