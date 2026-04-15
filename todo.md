@@ -71,11 +71,13 @@
 
 ## Disparo de Mensagens WhatsApp
 
-- [ ] Checkpoint de segurança antes de implementar disparo
-- [ ] Backend: router para disparar mensagens (sendWhatsApp)
-- [ ] Backend: fila de processamento com intervalos 10-30 min
-- [ ] Backend: integração com Evolution API
-- [ ] Frontend: botão "Enviar WhatsApp" na página Leads
-- [ ] Frontend: coluna de status de envio na tabela
-- [ ] Testes vitest para router de WhatsApp
-- [ ] Validar disparo em tempo real
+- [x] Checkpoint de segurança antes de implementar disparo (5197655b)
+- [x] Backend: router para disparar mensagens (sendWhatsApp + sendToLeads)
+- [x] Backend: fila de processamento com intervalos 10-30 min (whatsappService.ts)
+- [x] Backend: integração com Evolution API (https://evo.wzapflow.com.br)
+- [x] Backend: carregar credenciais da Evolution API do banco de dados
+- [x] Frontend: botão "Enviar WhatsApp" na página Leads
+- [x] Frontend: campos de configuração da Evolution API em Configurações
+- [x] Testes vitest passando (11 testes)
+- [ ] Validar disparo em tempo real com Evolution API
+- [ ] Adicionar coluna de status de envio na tabela de leads

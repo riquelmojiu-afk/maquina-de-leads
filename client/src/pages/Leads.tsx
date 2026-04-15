@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Building2, Download, Phone, Search } from "lucide-react";
+import { Building2, Download, MessageCircle, Phone, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +44,24 @@ export default function Leads() {
     { enabled: false }
   );
 
+  const sendWhatsAppMutation = trpc.whatsapp.sendToCampaign.useMutation({
+    onSuccess: (result) => {
+      toast.success(`${result.queued} mensagens adicionadas à fila!`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleSendWhatsApp = () => {
+    if (!campaignId || campaignId === "all") {
+      toast.error("Selecione uma campanha para enviar mensagens");
+      return;
+    }
+    sendWhatsAppMutation.mutate({
+      campaignId: Number(campaignId),
+      message: "Ooi, tudo bem?",
+    });
+  };
+
   function handleExport() {
     fetchCsv().then((result) => {
       if (result.data?.csv) {
@@ -74,10 +92,20 @@ export default function Leads() {
             {data ? `${data.total.toLocaleString("pt-BR")} leads encontrados` : "Carregando..."}
           </p>
         </div>
-        <Button onClick={handleExport} variant="outline" className="gap-2 border-border">
-          <Download className="h-4 w-4" />
-          Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSendWhatsApp}
+            disabled={sendWhatsAppMutation.isPending || campaignId === "all"}
+            className="gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Enviar WhatsApp
+          </Button>
+          <Button onClick={handleExport} variant="outline" className="gap-2 border-border">
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

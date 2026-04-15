@@ -19,6 +19,7 @@ import {
   updateCampaign,
 } from "./db";
 import { getMiningProgress, startMining } from "./miningService";
+import { queueMultipleMessages, getQueueStatus } from "./whatsappService";
 
 export const appRouter = router({
   system: systemRouter,
@@ -209,6 +210,47 @@ export const appRouter = router({
     }),
   }),
 
+  // ─── WhatsApp ──────────────────────────────────────────────────────────────
+  whatsapp: router({
+    sendToCampaign: publicProcedure
+      .input(
+        z.object({
+          campaignId: z.number(),
+          message: z.string().min(1, "Mensagem obrigatória"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const leads = await getLeads({ campaignId: input.campaignId, statusWhatsApp: "pronto" });
+        const validLeads = leads.filter((l) => l.telefoneNormalizado);
+        const queued = await queueMultipleMessages(
+          validLeads.map((l) => ({ id: l.id, telefoneNormalizado: l.telefoneNormalizado!, nomeEmpresa: l.nomeEmpresa })),
+          input.message
+        );
+        return { queued, total: validLeads.length };
+      }),
+
+    sendToLeads: publicProcedure
+      .input(
+        z.object({
+          leadIds: z.array(z.number()),
+          message: z.string().min(1, "Mensagem obrigatória"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const leads = await getLeads();
+        const validLeads = leads.filter((l) => input.leadIds.includes(l.id) && l.statusWhatsApp === "pronto" && l.telefoneNormalizado);
+        const queued = await queueMultipleMessages(
+          validLeads.map((l) => ({ id: l.id, telefoneNormalizado: l.telefoneNormalizado!, nomeEmpresa: l.nomeEmpresa })),
+          input.message
+        );
+        return { queued, total: validLeads.length };
+      }),
+
+    getQueueStatus: publicProcedure.query(async () => {
+      return getQueueStatus();
+    }),
+  }),
+
   // ─── Settings ───────────────────────────────────────────────────────────────
   settings: router({
     getAll: publicProcedure.query(async () => {
@@ -227,6 +269,12 @@ export const appRouter = router({
         google_places_api_key_set: !!all.google_places_api_key,
         google_maps_platform_api_key_set: !!all.google_maps_platform_api_key,
         google_sheets_api_key_set: !!all.google_sheets_api_key,
+        evolution_api_base: all.evolution_api_base || "",
+        evolution_instance_token: all.evolution_instance_token ? "••••••••" + (all.evolution_instance_token.slice(-4) || "") : "",
+        evolution_sender_number: all.evolution_sender_number || "",
+        evolution_api_base_set: !!all.evolution_api_base,
+        evolution_instance_token_set: !!all.evolution_instance_token,
+        evolution_sender_number_set: !!all.evolution_sender_number,
       };
     }),
 
@@ -236,6 +284,9 @@ export const appRouter = router({
           google_places_api_key: z.string().optional(),
           google_maps_platform_api_key: z.string().optional(),
           google_sheets_api_key: z.string().optional(),
+          evolution_api_base: z.string().optional(),
+          evolution_instance_token: z.string().optional(),
+          evolution_sender_number: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -247,6 +298,15 @@ export const appRouter = router({
         }
         if (input.google_sheets_api_key) {
           await setSetting("google_sheets_api_key", input.google_sheets_api_key);
+        }
+        if (input.evolution_api_base) {
+          await setSetting("evolution_api_base", input.evolution_api_base);
+        }
+        if (input.evolution_instance_token) {
+          await setSetting("evolution_instance_token", input.evolution_instance_token);
+        }
+        if (input.evolution_sender_number) {
+          await setSetting("evolution_sender_number", input.evolution_sender_number);
         }
         return { success: true };
       }),
