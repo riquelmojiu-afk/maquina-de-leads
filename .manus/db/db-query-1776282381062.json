@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `leads` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `campaignId` int NOT NULL,\n  `placeId` varchar(255) NOT NULL,\n  `nomeEmpresa` varchar(500) NOT NULL,\n  `telefoneOriginal` varchar(50),\n  `telefoneNormalizado` varchar(50),\n  `cidade` varchar(255),\n  `categoria` text,\n  `endereco` text,\n  `website` text,\n  `statusWhatsApp` enum('pronto','sem_telefone') NOT NULL DEFAULT 'sem_telefone',\n  `statusEnvio` enum('pending','sent','error') NOT NULL DEFAULT 'pending',\n  `dataCaptura` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MwYfv46MG31KKSF.root --database Jo6F6FaxHCTGFAdHyoxJvj --execute CREATE TABLE IF NOT EXISTS `leads` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `campaignId` int NOT NULL,\n  `placeId` varchar(255) NOT NULL,\n  `nomeEmpresa` varchar(500) NOT NULL,\n  `telefoneOriginal` varchar(50),\n  `telefoneNormalizado` varchar(50),\n  `cidade` varchar(255),\n  `categoria` text,\n  `endereco` text,\n  `website` text,\n  `statusWhatsApp` enum('pronto','sem_telefone') NOT NULL DEFAULT 'sem_telefone',\n  `statusEnvio` enum('pending','sent','error') NOT NULL DEFAULT 'pending',\n  `dataCaptura` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 106
+}

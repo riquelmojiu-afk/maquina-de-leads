@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `mining_logs` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `campaignId` int NOT NULL,\n  `campaignName` varchar(255),\n  `startedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `finishedAt` timestamp NULL,\n  `leadsFound` int NOT NULL DEFAULT 0,\n  `duplicatesSkipped` int NOT NULL DEFAULT 0,\n  `errorsCount` int NOT NULL DEFAULT 0,\n  `status` enum('running','completed','error') NOT NULL DEFAULT 'running',\n  `logMessages` text\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MwYfv46MG31KKSF.root --database Jo6F6FaxHCTGFAdHyoxJvj --execute CREATE TABLE IF NOT EXISTS `mining_logs` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `campaignId` int NOT NULL,\n  `campaignName` varchar(255),\n  `startedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `finishedAt` timestamp NULL,\n  `leadsFound` int NOT NULL DEFAULT 0,\n  `duplicatesSkipped` int NOT NULL DEFAULT 0,\n  `errorsCount` int NOT NULL DEFAULT 0,\n  `status` enum('running','completed','error') NOT NULL DEFAULT 'running',\n  `logMessages` text\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 132
+}

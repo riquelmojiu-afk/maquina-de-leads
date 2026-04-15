@@ -21,15 +21,19 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { BarChart3, Building2, LayoutDashboard, LogOut, Megaphone, PanelLeft, Radio, Search, Settings, Zap } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Megaphone, label: "Campanhas", path: "/campaigns" },
+  { icon: Zap, label: "Mineração", path: "/mining" },
+  { icon: Building2, label: "Leads", path: "/leads" },
+  { icon: Radio, label: "Disparos", path: "/broadcasts" },
+  { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -39,8 +43,12 @@ const MAX_WIDTH = 480;
 
 export default function DashboardLayout({
   children,
+  title,
+  subtitle,
 }: {
   children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
@@ -90,7 +98,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent setSidebarWidth={setSidebarWidth} title={title} subtitle={subtitle}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -100,11 +108,15 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
+  title?: string;
+  subtitle?: string;
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
+  title,
+  subtitle,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -170,8 +182,11 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center shrink-0">
+                    <Zap className="h-3.5 w-3.5 text-primary-foreground" />
+                  </div>
+                  <span className="font-semibold tracking-tight truncate text-foreground">
+                    Máquina de Leads
                   </span>
                 </div>
               ) : null}
@@ -257,7 +272,15 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4">
+          {(title || subtitle) && (
+            <div className="mb-6">
+              {title && <h1 className="text-2xl font-bold tracking-tight">{title}</h1>}
+              {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+            </div>
+          )}
+          {children}
+        </main>
       </SidebarInset>
     </>
   );
