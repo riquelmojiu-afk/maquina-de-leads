@@ -32,12 +32,29 @@ export const campaigns = mysqlTable("campaigns", {
   messageTemplate: text("messageTemplate"),
   status: mysqlEnum("status", ["ativa", "inativa"]).default("inativa").notNull(),
   spreadsheetId: varchar("spreadsheetId", { length: 255 }),
+  searchVariations: text("searchVariations"), // JSON array of search query variations
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = typeof campaigns.$inferInsert;
+
+// Helper to parse search variations
+export function parseSearchVariations(json: string | null): string[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.filter(v => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+// Helper to stringify search variations
+export function stringifySearchVariations(variations: string[]): string {
+  return JSON.stringify(variations);
+}
 
 // ─── Leads ────────────────────────────────────────────────────────────────────
 export const leads = mysqlTable("leads", {

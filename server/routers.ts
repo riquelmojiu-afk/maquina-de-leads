@@ -59,6 +59,7 @@ export const appRouter = router({
           cidades: z.string().min(1, "Informe ao menos uma cidade"),
           messageTemplate: z.string().optional(),
           spreadsheetId: z.string().optional(),
+          searchVariations: z.string().nullable().optional(),
           status: z.enum(["ativa", "inativa"]).default("inativa"),
         })
       )
@@ -76,6 +77,7 @@ export const appRouter = router({
           cidades: z.string().optional(),
           messageTemplate: z.string().optional(),
           spreadsheetId: z.string().optional(),
+          searchVariations: z.string().nullable().optional(),
           status: z.enum(["ativa", "inativa"]).optional(),
         })
       )

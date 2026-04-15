@@ -19,6 +19,7 @@ type CampaignForm = {
   cidades: string;
   messageTemplate: string;
   spreadsheetId: string;
+  searchVariations: string;
 };
 
 const emptyForm: CampaignForm = {
@@ -27,6 +28,7 @@ const emptyForm: CampaignForm = {
   cidades: "",
   messageTemplate: "",
   spreadsheetId: "",
+  searchVariations: "",
 };
 
 export default function Campaigns() {
@@ -81,22 +83,40 @@ export default function Campaigns() {
 
   function openEdit(c: NonNullable<typeof campaigns>[0]) {
     setEditId(c.id);
+    let variations = "";
+    if (c.searchVariations) {
+      try {
+        const parsed = JSON.parse(c.searchVariations);
+        variations = parsed.join("\n");
+      } catch {
+        variations = "";
+      }
+    }
     setForm({
       name: c.name,
       nicho: c.nicho,
       cidades: c.cidades,
       messageTemplate: c.messageTemplate || "",
       spreadsheetId: c.spreadsheetId || "",
+      searchVariations: variations,
     });
     setOpen(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const variations = form.searchVariations
+      .split("\n")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    const payload = {
+      ...form,
+      searchVariations: variations.length > 0 ? JSON.stringify(variations) : null,
+    };
     if (editId !== null) {
-      updateMutation.mutate({ id: editId, ...form });
+      updateMutation.mutate({ id: editId, ...payload });
     } else {
-      createMutation.mutate({ ...form, status: "inativa" });
+      createMutation.mutate({ ...payload, status: "inativa" });
     }
   }
 
@@ -321,6 +341,19 @@ export default function Campaigns() {
               />
               <p className="text-xs text-muted-foreground">
                 Opcional — ID da planilha para sincronização com Google Sheets
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-foreground">Variações de Busca (Múltiplas Queries)</Label>
+              <Textarea
+                placeholder="Ex: Açaí&#10;Sorveteria&#10;Açaí Gourmet&#10;(uma por linha — deixe em branco para usar apenas o nicho)"
+                value={form.searchVariations}
+                onChange={(e) => setForm((f) => ({ ...f, searchVariations: e.target.value }))}
+                rows={3}
+                className="bg-input border-border text-foreground resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Opcional — Adicione variações de termo para aumentar cobertura (ex: 200+ leads). Deixe em branco para usar apenas o nicho.
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-2">

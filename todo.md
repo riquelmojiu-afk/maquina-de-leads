@@ -39,13 +39,18 @@
 - [x] Adicionar campo Maps Platform API Key no routers.ts
 - [x] Atualizar Settings.tsx com novo campo para Maps Platform API Key
 - [x] Adicionar seletor de estratégia na página Mining (Places vs Maps)
-- [ ] Testar mineração com Maps Platform API Key
-- [ ] Validar se consegue 200+ leads com a chave alternativa
-- [ ] Implementar múltiplas queries se Maps Platform não melhorar
+- [x] Testar mineração com Maps Platform API Key (resultado: mesmos 60 leads)
+- [x] Validar se consegue 200+ leads com a chave alternativa (não melhorou)
+- [x] Implementar múltiplas queries com variações de termos (miningService.ts)
+- [x] Adicionar campo de variações no schema de campanhas (searchVariations)
+- [x] UI para gerenciar variações de busca por campanha (Campaigns.tsx)
+- [x] Backend: routers.ts com suporte a searchVariations
+- [x] Testes vitest passando (11 testes) — validado
+- [ ] Testar mineração com múltiplas queries em tempo real (meta: 200+ leads)
 
-## Melhorias — Aumento de Cobertura de Leads (200+)
+## Melhorias — Estratégia de Múltiplas Queries (200+ leads)
 
-### Fase 1: Checkpoint de Segurança
+### Fase 2: Implementação de Múltiplas Queries
 - [x] Checkpoint criado antes das mudanças (versão segura para rollback) — be50cf1c
 
 ### Fase 2: Implementar Mineração V2 (Múltiplas Queries + Nearby Search)
