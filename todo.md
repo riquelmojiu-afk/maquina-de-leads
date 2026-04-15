@@ -67,3 +67,15 @@
 ### Fase 4: Entrega
 - [ ] Checkpoint final com melhorias
 - [ ] Documentação de como usar ambas as estratégias
+
+
+## Disparo de Mensagens WhatsApp
+
+- [ ] Checkpoint de segurança antes de implementar disparo
+- [ ] Backend: router para disparar mensagens (sendWhatsApp)
+- [ ] Backend: fila de processamento com intervalos 10-30 min
+- [ ] Backend: integração com Evolution API
+- [ ] Frontend: botão "Enviar WhatsApp" na página Leads
+- [ ] Frontend: coluna de status de envio na tabela
+- [ ] Testes vitest para router de WhatsApp
+- [ ] Validar disparo em tempo real
