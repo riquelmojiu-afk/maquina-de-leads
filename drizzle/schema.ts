@@ -92,6 +92,25 @@ export const settings = mysqlTable("settings", {
 
 export type Setting = typeof settings.$inferSelect;
 
+// ─── Dispatch Queue ─────────────────────────────────────────────────────────
+export const dispatchQueue = mysqlTable("dispatch_queue", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  telefoneNormalizado: varchar("telefoneNormalizado", { length: 50 }).notNull(),
+  nomeEmpresa: varchar("nomeEmpresa", { length: 500 }).notNull(),
+  message: text("message").notNull(),
+  retries: int("retries").default(0).notNull(),
+  sendAfter: timestamp("sendAfter").notNull(), // when to send (UTC)
+  status: mysqlEnum("status", ["pending", "processing", "sent", "error"])
+    .default("pending")
+    .notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DispatchQueueItem = typeof dispatchQueue.$inferSelect;
+export type InsertDispatchQueueItem = typeof dispatchQueue.$inferInsert;
+
 // ─── Mining Logs ──────────────────────────────────────────────────────────────
 export const miningLogs = mysqlTable("mining_logs", {
   id: int("id").autoincrement().primaryKey(),

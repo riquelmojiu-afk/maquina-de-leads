@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "1ea26d29-a856-4887-bb83-ff625dc2e1c3",
-  "prevId": "9d66a831-5a75-4b01-985b-e68d0e1e3856",
+  "id": "c6810046-db69-4d04-8f77-6ba5773c1ca6",
+  "prevId": "1ea26d29-a856-4887-bb83-ff625dc2e1c3",
   "tables": {
     "campaigns": {
       "name": "campaigns",
@@ -87,6 +87,98 @@
       "compositePrimaryKeys": {
         "campaigns_id": {
           "name": "campaigns_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "dispatch_queue": {
+      "name": "dispatch_queue",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "leadId": {
+          "name": "leadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "telefoneNormalizado": {
+          "name": "telefoneNormalizado",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nomeEmpresa": {
+          "name": "nomeEmpresa",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "retries": {
+          "name": "retries",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "sendAfter": {
+          "name": "sendAfter",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('pending','processing','sent','error')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "dispatch_queue_id": {
+          "name": "dispatch_queue_id",
           "columns": [
             "id"
           ]
@@ -183,6 +275,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'pending'"
+        },
+        "bloqueado": {
+          "name": "bloqueado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "dataCaptura": {
           "name": "dataCaptura",

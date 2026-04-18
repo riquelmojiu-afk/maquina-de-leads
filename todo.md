@@ -47,3 +47,9 @@
 - [x] Implementar lógica de horário no whatsappService (aguardar janela de disparo)
 - [x] Atualizar testes vitest para cobrir as novas funcionalidades
 - [x] Salvar checkpoint e push para o GitHub
+
+## Bug: Fila de Disparos Para Após Primeiro Envio
+- [x] Identificar causa raiz no whatsappService.ts
+- [x] Corrigir loop de processamento da fila
+- [x] Garantir persistência da fila no banco de dados
+- [x] Testar, salvar checkpoint e push para o GitHub

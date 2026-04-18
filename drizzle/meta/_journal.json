@@ -15,6 +15,13 @@
       "when": 1776285023343,
       "tag": "0001_daily_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776546051458,
+      "tag": "0002_eager_manta",
+      "breakpoints": true
     }
   ]
 }

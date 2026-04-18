@@ -258,7 +258,7 @@ export const appRouter = router({
       }),
 
     getQueueStatus: publicProcedure.query(async () => {
-      return getQueueStatus();
+      return await getQueueStatus();
     }),
 
     getLogs: publicProcedure.query(async () => {
@@ -266,7 +266,7 @@ export const appRouter = router({
     }),
 
     clearQueue: publicProcedure.mutation(async () => {
-      clearQueue();
+      await clearQueue();
       return { success: true };
     }),
 
